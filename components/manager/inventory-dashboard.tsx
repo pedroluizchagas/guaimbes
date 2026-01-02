@@ -57,14 +57,24 @@ export function InventoryDashboard() {
   async function fetchInventory() {
     setLoading(true)
 
-    const { data, error } = await supabase.from("inventory_items").select("*").order("name")
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select(`
+        *,
+        category:inventory_categories(name)
+      `)
+      .order("name")
 
     if (!error && data) {
       setItems(data)
 
-      const lowStockCount = data.filter((item) => item.current_stock <= item.min_stock && item.current_stock > 0).length
-      const outOfStockCount = data.filter((item) => item.current_stock === 0).length
-      const totalValue = data.reduce((sum, item) => sum + item.current_stock * item.unit_cost, 0)
+      const lowStockCount = data.filter((item) => item.current_quantity <= item.min_quantity && item.current_quantity > 0)
+        .length
+      const outOfStockCount = data.filter((item) => item.current_quantity === 0).length
+      const totalValue = data.reduce(
+        (sum, item) => sum + item.current_quantity * (item.cost_price ?? 0),
+        0
+      )
 
       setStats({
         totalItems: data.length,
@@ -83,24 +93,20 @@ export function InventoryDashboard() {
     const quantity = Number.parseInt(movementQuantity)
     if (isNaN(quantity) || quantity <= 0) return
 
-    const newStock =
-      movementDialog.type === "in"
-        ? movementDialog.item.current_stock + quantity
-        : Math.max(0, movementDialog.item.current_stock - quantity)
+    const previous = movementDialog.item.current_quantity
+    const next =
+      movementDialog.type === "in" ? previous + quantity : Math.max(0, previous - quantity)
 
-    const { error: updateError } = await supabase
-      .from("inventory_items")
-      .update({ current_stock: newStock })
-      .eq("id", movementDialog.item.id)
+    const { error: insertError } = await supabase.from("inventory_movements").insert({
+      item_id: movementDialog.item.id,
+      type: movementDialog.type === "in" ? "entry" : "exit",
+      quantity,
+      previous_quantity: previous,
+      new_quantity: next,
+      reason: movementNotes || null,
+    })
 
-    if (!updateError) {
-      await supabase.from("inventory_movements").insert({
-        inventory_item_id: movementDialog.item.id,
-        movement_type: movementDialog.type === "in" ? "entrada" : "saida",
-        quantity: quantity,
-        notes: movementNotes || null,
-      })
-
+    if (!insertError) {
       fetchInventory()
       setMovementDialog({ open: false, item: null, type: "in" })
       setMovementQuantity("")
@@ -112,24 +118,24 @@ export function InventoryDashboard() {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) || item.sku?.toLowerCase().includes(search.toLowerCase())
 
-    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter
+    const matchesCategory = categoryFilter === "all" || item.category?.name === categoryFilter
 
     const matchesStock =
       stockFilter === "all" ||
-      (stockFilter === "low" && item.current_stock <= item.min_stock && item.current_stock > 0) ||
-      (stockFilter === "out" && item.current_stock === 0) ||
-      (stockFilter === "ok" && item.current_stock > item.min_stock)
+      (stockFilter === "low" && item.current_quantity <= item.min_quantity && item.current_quantity > 0) ||
+      (stockFilter === "out" && item.current_quantity === 0) ||
+      (stockFilter === "ok" && item.current_quantity > item.min_quantity)
 
     return matchesSearch && matchesCategory && matchesStock
   })
 
-  const categories = [...new Set(items.map((item) => item.category).filter(Boolean))]
+  const categories = [...new Set(items.map((item) => item.category?.name).filter(Boolean))]
 
   function getStockStatus(item: InventoryItem) {
-    if (item.current_stock === 0) {
+    if (item.current_quantity === 0) {
       return <Badge variant="destructive">Sem Estoque</Badge>
     }
-    if (item.current_stock <= item.min_stock) {
+    if (item.current_quantity <= item.min_quantity) {
       return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Estoque Baixo</Badge>
     }
     return <Badge className="bg-primary/80 hover:bg-primary text-primary-foreground">Normal</Badge>
@@ -265,18 +271,20 @@ export function InventoryDashboard() {
                           {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
                         </div>
                       </TableCell>
-                      <TableCell>{item.category || "-"}</TableCell>
+                      <TableCell>{item.category?.name || "-"}</TableCell>
                       <TableCell className="text-center font-medium">
-                        {item.current_stock} {item.unit}
+                        {item.current_quantity} {item.unit}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground">
-                        {item.min_stock} {item.unit}
+                        {item.min_quantity} {item.unit}
                       </TableCell>
                       <TableCell>
-                        {item.unit_cost.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
+                        {item.cost_price != null
+                          ? item.cost_price.toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })
+                          : "-"}
                       </TableCell>
                       <TableCell>{getStockStatus(item)}</TableCell>
                       <TableCell className="text-right">
@@ -304,7 +312,7 @@ export function InventoryDashboard() {
                                 type: "out",
                               })
                             }
-                            disabled={item.current_stock === 0}
+                            disabled={item.current_quantity === 0}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -353,7 +361,7 @@ export function InventoryDashboard() {
               <p className="text-sm text-muted-foreground">
                 Estoque atual:{" "}
                 <strong>
-                  {movementDialog.item?.current_stock} {movementDialog.item?.unit}
+                  {movementDialog.item?.current_quantity} {movementDialog.item?.unit}
                 </strong>
               </p>
               {movementQuantity && !isNaN(Number.parseInt(movementQuantity)) && (
@@ -361,8 +369,8 @@ export function InventoryDashboard() {
                   Novo estoque:{" "}
                   <strong>
                     {movementDialog.type === "in"
-                      ? (movementDialog.item?.current_stock || 0) + Number.parseInt(movementQuantity)
-                      : Math.max(0, (movementDialog.item?.current_stock || 0) - Number.parseInt(movementQuantity))}{" "}
+                      ? (movementDialog.item?.current_quantity || 0) + Number.parseInt(movementQuantity)
+                      : Math.max(0, (movementDialog.item?.current_quantity || 0) - Number.parseInt(movementQuantity))}{" "}
                     {movementDialog.item?.unit}
                   </strong>
                 </p>

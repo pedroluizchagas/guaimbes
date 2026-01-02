@@ -14,12 +14,12 @@ import { ptBR } from "date-fns/locale"
 
 interface Movement {
   id: string
-  inventory_item_id: string
-  movement_type: "entrada" | "saida" | "ajuste"
+  item_id: string
+  type: "entry" | "exit" | "adjustment" | "loss"
   quantity: number
-  notes: string | null
+  reason: string | null
   created_at: string
-  inventory_item: {
+  item: {
     name: string
     unit: string
   }
@@ -43,7 +43,7 @@ export function InventoryMovements() {
       .from("inventory_movements")
       .select(`
         *,
-        inventory_item:inventory_items(name, unit)
+        item:inventory_items(name, unit)
       `)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -55,14 +55,22 @@ export function InventoryMovements() {
     setLoading(false)
   }
 
-  const filteredMovements = movements.filter((m) => typeFilter === "all" || m.movement_type === typeFilter)
+  const filteredMovements = movements.filter((m) => {
+    if (typeFilter === "all") return true
+    if (typeFilter === "entrada") return m.type === "entry"
+    if (typeFilter === "saida") return m.type === "exit"
+    if (typeFilter === "ajuste") return m.type === "adjustment"
+    return true
+  })
 
   function getMovementIcon(type: string) {
     switch (type) {
-      case "entrada":
+      case "entry":
         return <ArrowDownLeft className="h-4 w-4 text-primary" />
-      case "saida":
+      case "exit":
         return <ArrowUpRight className="h-4 w-4 text-destructive" />
+      case "adjustment":
+        return <Package className="h-4 w-4 text-muted-foreground" />
       default:
         return <Package className="h-4 w-4 text-muted-foreground" />
     }
@@ -70,12 +78,14 @@ export function InventoryMovements() {
 
   function getMovementBadge(type: string) {
     switch (type) {
-      case "entrada":
+      case "entry":
         return <Badge className="bg-primary/80 hover:bg-primary text-primary-foreground">Entrada</Badge>
-      case "saida":
+      case "exit":
         return <Badge variant="destructive">Saída</Badge>
-      default:
+      case "adjustment":
         return <Badge variant="secondary">Ajuste</Badge>
+      default:
+        return <Badge variant="destructive">Perda</Badge>
     }
   }
 
@@ -143,16 +153,16 @@ export function InventoryMovements() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getMovementIcon(movement.movement_type)}
-                          <span className="font-medium">{movement.inventory_item?.name}</span>
+                          {getMovementIcon(movement.type)}
+                          <span className="font-medium">{movement.item?.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{getMovementBadge(movement.movement_type)}</TableCell>
+                      <TableCell>{getMovementBadge(movement.type)}</TableCell>
                       <TableCell className="text-center font-medium">
-                        {movement.movement_type === "entrada" ? "+" : "-"}
-                        {movement.quantity} {movement.inventory_item?.unit}
+                        {movement.type === "entry" ? "+" : movement.type === "exit" ? "-" : ""}
+                        {movement.quantity} {movement.item?.unit}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{movement.notes || "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">{movement.reason || "-"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

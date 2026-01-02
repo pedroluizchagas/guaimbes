@@ -2,9 +2,10 @@
 
 import type React from "react"
 
-import { Bell, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NotificationsBell } from "@/components/manager/notifications-bell"
 
 interface HeaderProps {
   title: string
@@ -25,10 +26,7 @@ export function Header({ title, description, actions }: HeaderProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar..." className="pl-9 w-64 border-primary/20" />
           </div>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full" />
-          </Button>
+          <NotificationsBell />
           {actions}
         </div>
       </div>

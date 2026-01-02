@@ -8,17 +8,25 @@ import type { Lead, PipelineStage } from "@/lib/types/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Phone, Calendar, DollarSign, MoreVertical, Eye, Pencil, Trash2, MessageCircle } from "lucide-react"
+import { Phone, Calendar, DollarSign, MoreVertical, Eye, Pencil, Trash2, MessageCircle, FileText } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { toast } from "@/hooks/use-toast"
 
 export function KanbanBoard() {
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null)
+  const sourceLabels: Record<string, string> = {
+    website: "Site",
+    whatsapp: "WhatsApp",
+    referral: "Indicação",
+    instagram: "Instagram",
+    other: "Outro",
+  }
 
   useEffect(() => {
     fetchData()
@@ -65,6 +73,17 @@ export function KanbanBoard() {
 
     if (!error) {
       setLeads((prev) => prev.map((lead) => (lead.id === draggedLead.id ? { ...lead, stage_id: stageId } : lead)))
+      const stageName = stages.find((s) => s.id === stageId)?.name || "Nova etapa"
+      toast({
+        title: "Lead movido",
+        description: `Lead atualizado para "${stageName}".`,
+      })
+    } else {
+      toast({
+        title: "Erro ao mover lead",
+        description: "Não foi possível atualizar a etapa. Tente novamente.",
+        variant: "destructive",
+      })
     }
 
     setDraggedLead(null)
@@ -78,6 +97,16 @@ export function KanbanBoard() {
 
     if (!error) {
       setLeads((prev) => prev.filter((lead) => lead.id !== leadId))
+      toast({
+        title: "Lead excluído",
+        description: "O lead foi removido com sucesso.",
+      })
+    } else {
+      toast({
+        title: "Erro ao excluir lead",
+        description: "Não foi possível excluir o lead. Tente novamente.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -155,6 +184,14 @@ export function KanbanBoard() {
                               Editar
                             </Link>
                           </DropdownMenuItem>
+                          {lead.client_id && (
+                            <DropdownMenuItem asChild>
+                              <Link href={`/manager/quotes/new?client_id=${lead.client_id}&lead_id=${lead.id}`}>
+                                <FileText className="w-4 h-4 mr-2" />
+                                Criar Orçamento
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                           {lead.client?.phone && (
                             <DropdownMenuItem onClick={() => openWhatsApp(lead, stage)}>
                               <MessageCircle className="w-4 h-4 mr-2" />
@@ -197,7 +234,7 @@ export function KanbanBoard() {
 
                     {lead.source && (
                       <Badge variant="outline" className="mt-3 text-xs">
-                        {lead.source}
+                        {sourceLabels[lead.source] || lead.source}
                       </Badge>
                     )}
                   </CardContent>

@@ -18,7 +18,7 @@ interface Equipment {
   name: string
   type: string | null
   serial_number: string | null
-  status: "disponivel" | "em_uso" | "manutencao" | "inativo"
+  status: "available" | "in_use" | "maintenance" | "retired"
   purchase_date: string | null
   last_maintenance: string | null
   next_maintenance: string | null
@@ -70,13 +70,13 @@ export function EquipmentList() {
 
   function getStatusBadge(status: Equipment["status"]) {
     switch (status) {
-      case "disponivel":
+      case "available":
         return <Badge className="bg-primary/80 hover:bg-primary text-primary-foreground">Disponível</Badge>
-      case "em_uso":
+      case "in_use":
         return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Em Uso</Badge>
-      case "manutencao":
+      case "maintenance":
         return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Manutenção</Badge>
-      case "inativo":
+      case "retired":
         return <Badge variant="secondary">Inativo</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
@@ -114,9 +114,9 @@ export function EquipmentList() {
 
   const stats = {
     total: equipment.length,
-    available: equipment.filter((e) => e.status === "disponivel").length,
-    inUse: equipment.filter((e) => e.status === "em_uso").length,
-    maintenance: equipment.filter((e) => e.status === "manutencao").length,
+    available: equipment.filter((e) => e.status === "available").length,
+    inUse: equipment.filter((e) => e.status === "in_use").length,
+    maintenance: equipment.filter((e) => e.status === "maintenance").length,
   }
 
   return (
@@ -183,10 +183,10 @@ export function EquipmentList() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="disponivel">Disponível</SelectItem>
-                  <SelectItem value="em_uso">Em Uso</SelectItem>
-                  <SelectItem value="manutencao">Manutenção</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="available">Disponível</SelectItem>
+                  <SelectItem value="in_use">Em Uso</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
+                  <SelectItem value="retired">Inativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -251,10 +251,10 @@ export function EquipmentList() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="disponivel">Disponível</SelectItem>
-                            <SelectItem value="em_uso">Em Uso</SelectItem>
-                            <SelectItem value="manutencao">Manutenção</SelectItem>
-                            <SelectItem value="inativo">Inativo</SelectItem>
+                            <SelectItem value="available">Disponível</SelectItem>
+                            <SelectItem value="in_use">Em Uso</SelectItem>
+                            <SelectItem value="maintenance">Manutenção</SelectItem>
+                            <SelectItem value="retired">Inativo</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

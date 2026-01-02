@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,19 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
-
-const CATEGORIES = [
-  "Fertilizantes",
-  "Substratos",
-  "Ferramentas",
-  "Equipamentos",
-  "Vasos",
-  "Sementes",
-  "Mudas",
-  "Defensivos",
-  "Irrigação",
-  "Outros",
-]
+import type { InventoryCategory } from "@/lib/types/database"
 
 const UNITS = ["un", "kg", "g", "L", "mL", "m", "m²", "m³", "cx", "pct"]
 
@@ -37,14 +25,23 @@ export function InventoryItemForm() {
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
-    category: "",
+    category_id: "",
     description: "",
     unit: "un",
-    current_stock: 0,
-    min_stock: 5,
-    unit_cost: 0,
-    supplier: "",
+    current_quantity: 0,
+    min_quantity: 5,
+    cost_price: 0,
+    location: "",
   })
+  const [categories, setCategories] = useState<InventoryCategory[]>([])
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      const { data } = await supabase.from("inventory_categories").select("*").order("name")
+      setCategories((data || []) as InventoryCategory[])
+    }
+    loadCategories()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -53,13 +50,13 @@ export function InventoryItemForm() {
     const { error } = await supabase.from("inventory_items").insert({
       name: formData.name,
       sku: formData.sku || null,
-      category: formData.category || null,
+      category_id: formData.category_id || null,
       description: formData.description || null,
       unit: formData.unit,
-      current_stock: formData.current_stock,
-      min_stock: formData.min_stock,
-      unit_cost: formData.unit_cost,
-      supplier: formData.supplier || null,
+      current_quantity: formData.current_quantity,
+      min_quantity: formData.min_quantity,
+      cost_price: formData.cost_price || null,
+      location: formData.location || null,
     })
 
     setLoading(false)
@@ -104,16 +101,16 @@ export function InventoryItemForm() {
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+                  value={formData.category_id}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, category_id: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -153,49 +150,49 @@ export function InventoryItemForm() {
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="current_stock">Estoque Atual *</Label>
+                <Label htmlFor="current_quantity">Estoque Atual *</Label>
                 <Input
-                  id="current_stock"
+                  id="current_quantity"
                   type="number"
                   min="0"
-                  value={formData.current_stock}
+                  value={formData.current_quantity}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      current_stock: Number.parseInt(e.target.value) || 0,
+                      current_quantity: Number.parseInt(e.target.value) || 0,
                     }))
                   }
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="min_stock">Estoque Mínimo *</Label>
+                <Label htmlFor="min_quantity">Estoque Mínimo *</Label>
                 <Input
-                  id="min_stock"
+                  id="min_quantity"
                   type="number"
                   min="0"
-                  value={formData.min_stock}
+                  value={formData.min_quantity}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      min_stock: Number.parseInt(e.target.value) || 0,
+                      min_quantity: Number.parseInt(e.target.value) || 0,
                     }))
                   }
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unit_cost">Custo Unitário (R$) *</Label>
+                <Label htmlFor="cost_price">Custo Unitário (R$) *</Label>
                 <Input
-                  id="unit_cost"
+                  id="cost_price"
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.unit_cost}
+                  value={formData.cost_price}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      unit_cost: Number.parseFloat(e.target.value) || 0,
+                      cost_price: Number.parseFloat(e.target.value) || 0,
                     }))
                   }
                 />
@@ -203,12 +200,12 @@ export function InventoryItemForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supplier">Fornecedor</Label>
+              <Label htmlFor="location">Localização</Label>
               <Input
-                id="supplier"
-                value={formData.supplier}
-                onChange={(e) => setFormData((prev) => ({ ...prev, supplier: e.target.value }))}
-                placeholder="Nome do fornecedor principal"
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                placeholder="Ex: Galpão, prateleira A3"
               />
             </div>
 

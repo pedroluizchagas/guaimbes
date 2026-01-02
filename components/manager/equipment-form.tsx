@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 const EQUIPMENT_TYPES = [
   "Cortador de grama",
@@ -32,13 +33,14 @@ const EQUIPMENT_TYPES = [
 export function EquipmentForm() {
   const router = useRouter()
   const supabase = createClient()
+  const { toast } = useToast()
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     type: "",
     serial_number: "",
-    status: "disponivel" as const,
+    status: "available" as const,
     purchase_date: "",
     last_maintenance: "",
     next_maintenance: "",
@@ -51,7 +53,6 @@ export function EquipmentForm() {
 
     const { error } = await supabase.from("equipment").insert({
       name: formData.name,
-      type: formData.type || null,
       serial_number: formData.serial_number || null,
       status: formData.status,
       purchase_date: formData.purchase_date || null,
@@ -63,7 +64,17 @@ export function EquipmentForm() {
     setLoading(false)
 
     if (!error) {
+      toast({
+        title: "Equipamento salvo",
+        description: "O equipamento foi cadastrado com sucesso.",
+      })
       router.push("/manager/equipment")
+    } else {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message ?? "Não foi possível cadastrar o equipamento.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -122,7 +133,7 @@ export function EquipmentForm() {
                 <Label htmlFor="status">Status *</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value: "disponivel" | "em_uso" | "manutencao" | "inativo") =>
+                  onValueChange={(value: "available" | "in_use" | "maintenance" | "retired") =>
                     setFormData((prev) => ({ ...prev, status: value }))
                   }
                 >
@@ -130,10 +141,10 @@ export function EquipmentForm() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="disponivel">Disponível</SelectItem>
-                    <SelectItem value="em_uso">Em Uso</SelectItem>
-                    <SelectItem value="manutencao">Em Manutenção</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
+                    <SelectItem value="available">Disponível</SelectItem>
+                    <SelectItem value="in_use">Em Uso</SelectItem>
+                    <SelectItem value="maintenance">Em Manutenção</SelectItem>
+                    <SelectItem value="retired">Inativo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

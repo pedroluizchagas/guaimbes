@@ -20,9 +20,11 @@ import {
   Menu,
   X,
   ListChecks,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 const navigation = [
   { name: "Dashboard", href: "/manager", icon: LayoutDashboard },
@@ -42,15 +44,26 @@ export function Sidebar() {
   const pathname = usePathname()
   const { profile, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const roleLabels: Record<string, string> = {
+    admin: "Administrador",
+    manager: "Gestor",
+    field_team: "Equipe de Campo",
+    financial: "Financeiro",
+  }
 
   const NavContent = () => (
     <>
-      <div className="flex items-center gap-3 px-4 py-6 border-b border-border">
-        <Image src="/images/icon.png" alt="Guaimbês" width={40} height={40} className="w-10 h-10" />
-        <div>
-          <h1 className="font-bold text-primary text-lg">Guaimbês</h1>
-          <p className="text-xs text-muted-foreground">Manager</p>
+      <div className="flex items-center justify-between px-4 py-6 border-b border-border">
+        <div className="flex items-center gap-3">
+          <Image src="/images/icon.png" alt="Guaimbês" width={40} height={40} className="w-10 h-10 rounded-full" />
+          <div>
+            <h1 className="font-bold text-primary text-lg">Guaimbês</h1>
+            <p className="text-xs text-muted-foreground">Manager</p>
+          </div>
         </div>
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)}>
+          <X className="w-6 h-6" />
+        </Button>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -74,17 +87,21 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 py-4 border-t border-border">
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">
-              {profile?.full_name?.charAt(0)?.toUpperCase() || "U"}
-            </span>
+        <Link href="/manager/profile" className="block">
+          <div className="flex items-center gap-3 px-3 py-2 mb-2 rounded-lg hover:bg-accent transition-colors">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={profile?.avatar_url || ""} alt={profile?.full_name || "Avatar"} />
+              <AvatarFallback>{profile?.full_name?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{profile?.full_name || "Usuário"}</p>
+              <p className="text-xs text-muted-foreground">
+                {roleLabels[profile?.role || "field_team"] || profile?.role || "field_team"}
+              </p>
+            </div>
+            <Settings className="w-5 h-5 text-muted-foreground" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{profile?.full_name || "Usuário"}</p>
-            <p className="text-xs text-muted-foreground capitalize">{profile?.role || "field_team"}</p>
-          </div>
-        </div>
+        </Link>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -100,14 +117,16 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </Button>
+      {!mobileOpen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 lg:hidden"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="w-6 h-6" />
+        </Button>
+      )}
 
       {/* Mobile sidebar */}
       <div className={cn("fixed inset-0 z-40 lg:hidden", mobileOpen ? "block" : "hidden")}>

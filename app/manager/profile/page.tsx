@@ -1,9 +1,9 @@
-import { Header } from "@/components/manager/header"
-import { LeadForm } from "@/components/manager/lead-form"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { Header } from "@/components/manager/header"
+import { ProfileForm } from "@/components/manager/profile-form"
 
-export default async function NewLeadPage() {
+export default async function ProfilePage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -16,10 +16,11 @@ export default async function NewLeadPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Novo Lead" description="Cadastre uma nova oportunidade" />
+      <Header title="Perfil" description="Atualize seu nome e avatar" />
       <div className="p-4 lg:p-8">
-        <LeadForm />
+        <ProfileForm />
       </div>
     </div>
   )
 }
+
