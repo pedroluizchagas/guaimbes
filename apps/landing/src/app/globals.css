@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* breakpoints do design de referência: tablet 810px, desktop 1200px */
+  --breakpoint-md: 810px;
+  --breakpoint-lg: 1200px;
+
+  --color-cream: #f8f0dd;
+  --color-ink: #121212;
+  --color-paper: #f0f0f0;
+  --color-terra: #c85020;
+  --color-terra-deep: #9f4c29;
+  --font-sans: var(--font-inter), "Inter", sans-serif;
+  --font-mono: var(--font-dm-mono), "DM Mono", monospace;
+}
+
+/* ---- escala tipográfica ---- */
+
+/* wordmark gigante (hero / footer) */
+@utility display-mega {
+  font-family: var(--font-sans);
+  font-size: clamp(5.5rem, 20.5vw, 19rem);
+  line-height: 0.78;
+  letter-spacing: -0.03em;
+  font-weight: 420;
+  font-optical-sizing: auto;
+}
+
+/* títulos de seção (sobre, serviços, viveiro) */
+@utility display-giant {
+  font-family: var(--font-sans);
+  font-size: clamp(4.5rem, 13.5vw, 12.5rem);
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+  font-weight: 420;
+  font-optical-sizing: auto;
+}
+
+/* títulos dos cards de serviço */
+@utility display-title {
+  font-family: var(--font-sans);
+  font-size: clamp(3rem, 8.3vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 420;
+  font-optical-sizing: auto;
+}
+
+/* subtítulo do hero */
+@utility display-sub {
+  font-family: var(--font-sans);
+  font-size: clamp(1.75rem, 3.9vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 380;
+  font-optical-sizing: auto;
+}
+
+/* parágrafos grandes */
+@utility text-lead {
+  font-size: clamp(1.5rem, 2.25vw, 2rem);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+@utility text-lead-sm {
+  font-size: clamp(1.25rem, 1.7vw, 1.5rem);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+/* labels técnicos DM Mono */
+@utility mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+@utility mono-label-sm {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+/* ---- base ---- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-terra);
+  color: var(--color-cream);
+}
+
+/* ---- marquee ---- */
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
